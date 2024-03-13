@@ -17,7 +17,7 @@ pipeline {
             steps {
                 script {
                     dir('kubernetes/prometheus-helm') {
-                        sh "aws eks --region us-east-1 update-kubeconfig --name hr-dev-eks-demo"
+                        sh "aws eks --region us-east-1 update-kubeconfig --name demo"
                         sh "terraform init"
                         sh "terraform apply -auto-approve"
                     }
