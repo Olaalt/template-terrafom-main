@@ -5,19 +5,23 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
         AWS_DEFAULT_REGION = "us-east-1"
     }
-    parameters{
-        choice(name: 'ENVIRONMENT', choices: ['create', 'destroy'], description: 'create and destroy cluster with one click')
-    }
     stages {
-     
-        stage("Create prometheus") {
-             when {
-                expression { params.ENVIRONMENT == 'create' }
-            }
+        stage("Create nginx-conroller") {
             steps {
                 script {
-                    dir('kubernetes/prometheus-helm') {
-                        sh "aws eks --region us-east-1 update-kubeconfig --name demo"
+                    dir('nginx-controller') {
+                       sh "aws eks --region us-east-1 update-kubeconfig --name demo"
+                        sh "terraform init"
+                        sh "terraform apply -auto-approve"
+                    }
+                }
+            }
+        }
+
+        stage("Create prometheus") {
+            steps {
+                script {
+                    dir('prometheus') {
                         sh "terraform init"
                         sh "terraform apply -auto-approve"
                     }
@@ -26,127 +30,34 @@ pipeline {
         }
 
         stage("Deploy voting-app to EKS") {
-             when {
-                expression { params.ENVIRONMENT == 'create' }
-            }
             steps {
                 script {
-                    dir('kubernetes/voting-app') {
-                        sh "terraform init"
-                        sh "terraform apply -auto-approve"
+                    dir('voting-app') {
+                        sh "kubectl apply -f voting-app.yaml"
                     }
                 }
             }
         }
 
         stage("Deploy sock-shop to EKS") {
-             when {
-                expression { params.ENVIRONMENT == 'create' }
-            }
             steps {
                 script {
-                    dir('kubernetes/micro-service') {
+                    dir('sock-shop') {
+                        sh "kubectl apply -f complete-deployment.yaml"
+                    }
+                }
+            }
+        }
+
+        stage("Deploy ingress rule to EKS") {
+            steps {
+                script {
+                    dir('ingress-rule') {
                         sh "terraform init"
                         sh "terraform apply -auto-approve"
                     }
                 }
             }
         }
-
-         stage("Deploy ingress rule to EKS") {
-             when {
-                expression { params.ENVIRONMENT == 'create' }
-            }
-            steps {
-                script {
-                    dir('kubernetes/ingress-rule') {
-                        sh "terraform init"
-                        sh "terraform apply -auto-approve"
-                    }
-                }
-            }
-        }
-
-         stage("Create nginx-conroller & route53") {
-             when {
-                expression { params.ENVIRONMENT == 'create' }
-            }
-            steps {
-                script {
-                    dir('kubernetes/nginx-controller') {
-                        sh "terraform init"
-                        sh "terraform apply -auto-approve"
-                    }
-                }
-            }
-        }
-
-       
-
-         stage("destroy prometheus") {
-             when {
-                expression { params.ENVIRONMENT == 'destroy' }
-            }
-            steps {
-                script {
-                    dir('kubernetes/prometheus-helm') {
-                        sh "terraform destroy -auto-approve"
-                    }
-                }
-            }
-        }
-
-        stage("Destroy voting-app in EKS") {
-             when {
-                expression { params.ENVIRONMENT == 'destroy' }
-            }
-            steps {
-                script {
-                    dir('kubernetes/voting-app') {
-                        sh "terraform destroy -auto-approve"
-                    }
-                }
-            }
-        }
-
-        stage("Destroy sock-shop in EKS") {
-             when {
-                expression { params.ENVIRONMENT == 'destroy' }
-            }
-            steps {
-                script {
-                    dir('kubernetes/micro-service') {
-                        sh "terraform destroy -auto-approve"
-                    }
-                }
-            }
-        }
-
-        stage("Destroy ingress rule in EKS") {
-             when {
-                expression { params.ENVIRONMENT == 'destroy' }
-            }
-            steps {
-                script {
-                    dir('kubernetes/ingress-rule') {
-                        sh "terraform destroy -auto-approve"
-                    }
-                }
-            }
-        }
-        
-         stage("destroy nginx-conroller") {
-             when {
-                expression { params.ENVIRONMENT == 'destroy' }
-            }
-            steps {
-                script {
-                    dir('kubernetes/nginx-controller') {
-                         sh "terraform destroy -auto-approve"
-                    }
-                }
-            }
-        }
-
     }
 }
