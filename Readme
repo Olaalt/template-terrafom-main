@@ -1,0 +1,17 @@
+# intro
+
+this project allow you to contineouse development and continous intergation usinc a jenkin pipeline.
+
+Requirements
+1. an active amazon account
+2. a keypair and security group
+
+
+setup  
+create a Ec2 instance using a t2 Medium or larger
+ open the instance 
+clone the git repo ( git clone paste path and name of your folder )
+cd into the folder
+maker script.sh executable (chmod +x script.sh)
+run script.sh ( ./script.sh )
+allowd all prompt
